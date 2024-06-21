@@ -64,7 +64,7 @@ actions!(
 );
 
 const OUTLINE_PANEL_KEY: &str = "OutlinePanel";
-const UPDATE_DEBOUNCE_MILLIS: u64 = 80;
+const UPDATE_DEBOUNCE: Duration = Duration::from_millis(80);
 
 type Outline = OutlineItem<language::Anchor>;
 
@@ -2793,7 +2793,6 @@ fn subscribe_for_editor_events(
     editor: &View<Editor>,
     cx: &mut ViewContext<OutlinePanel>,
 ) -> Subscription {
-    let debounce = Some(Duration::from_millis(UPDATE_DEBOUNCE_MILLIS));
     cx.subscribe(
         editor,
         move |outline_panel, editor, e: &EditorEvent, cx| match e {
@@ -2806,7 +2805,7 @@ fn subscribe_for_editor_events(
                     &editor,
                     excerpts.iter().map(|&(excerpt_id, _)| excerpt_id).collect(),
                     None,
-                    debounce,
+                    Some(UPDATE_DEBOUNCE),
                     false,
                     cx,
                 );
@@ -2823,7 +2822,7 @@ fn subscribe_for_editor_events(
                     &editor,
                     HashSet::default(),
                     None,
-                    debounce,
+                    Some(UPDATE_DEBOUNCE),
                     false,
                     cx,
                 );
@@ -2834,7 +2833,7 @@ fn subscribe_for_editor_events(
                     &editor,
                     HashSet::default(),
                     None,
-                    debounce,
+                    Some(UPDATE_DEBOUNCE),
                     true,
                     cx,
                 );
@@ -2845,7 +2844,7 @@ fn subscribe_for_editor_events(
                     &editor,
                     HashSet::default(),
                     None,
-                    debounce,
+                    Some(UPDATE_DEBOUNCE),
                     true,
                     cx,
                 );
@@ -2860,7 +2859,7 @@ fn subscribe_for_editor_events(
                     &editor,
                     HashSet::default(),
                     None,
-                    debounce,
+                    Some(UPDATE_DEBOUNCE),
                     true,
                     cx,
                 );

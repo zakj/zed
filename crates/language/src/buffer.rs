@@ -3395,7 +3395,7 @@ impl BufferSnapshot {
     pub fn git_diff_hunks_in_row_range(
         &self,
         range: Range<BufferRow>,
-    ) -> impl '_ + Iterator<Item = git::diff::DiffHunk<u32>> {
+    ) -> impl '_ + Iterator<Item = git::diff::DiffHunk<BufferRow>> {
         self.git_diff.hunks_in_row_range(range, self)
     }
 
@@ -3404,7 +3404,7 @@ impl BufferSnapshot {
     pub fn git_diff_hunks_intersecting_range(
         &self,
         range: Range<Anchor>,
-    ) -> impl '_ + Iterator<Item = git::diff::DiffHunk<u32>> {
+    ) -> impl '_ + Iterator<Item = git::diff::DiffHunk<BufferRow>> {
         self.git_diff.hunks_intersecting_range(range, self)
     }
 
@@ -3413,7 +3413,7 @@ impl BufferSnapshot {
     pub fn git_diff_hunks_intersecting_range_rev(
         &self,
         range: Range<Anchor>,
-    ) -> impl '_ + Iterator<Item = git::diff::DiffHunk<u32>> {
+    ) -> impl '_ + Iterator<Item = git::diff::DiffHunk<BufferRow>> {
         self.git_diff.hunks_intersecting_range_rev(range, self)
     }
 
