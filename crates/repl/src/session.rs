@@ -177,7 +177,7 @@ impl Session {
             .shared();
 
         return Self {
-            editor,
+            editor: editor.clone(),
             kernel: Kernel::StartingKernel(pending_kernel),
             messaging_task: Task::ready(()),
             blocks: HashMap::default(),

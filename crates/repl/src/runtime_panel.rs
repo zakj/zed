@@ -29,7 +29,7 @@ pub fn init(cx: &mut AppContext) {
                 .register_action(|workspace, _: &ToggleFocus, cx| {
                     workspace.toggle_panel_focus::<RuntimePanel>(cx);
                 })
-                .register_action(run)
+                // .register_action(run)
                 .register_action(clear_outputs);
         },
     )
@@ -67,17 +67,40 @@ impl RuntimePanel {
                         }),
                     ];
 
-                    let enabled = JupyterSettings::get_global(cx).enabled;
-
-                    Self {
+                    let mut runtime_panel = Self {
                         fs,
                         width: None,
                         focus_handle,
                         kernel_specifications: Vec::new(),
                         sessions: Default::default(),
                         _subscriptions: subscriptions,
-                        enabled,
-                    }
+                        enabled: JupyterSettings::get_global(cx).enabled,
+                    };
+                    // Too sleepy
+
+                    // let editor_subscription = cx.observe_new_views(
+                    //     move |editor: &mut Editor, cx: &mut ViewContext<Editor>| {
+                    //         let editor_view = cx.view().clone();
+
+                    //         editor.workspace()
+                    //         let fs = fs.clone();
+
+                    //         editor
+                    //             .register_action(move |_: &Run, cx: &mut WindowContext| {
+                    //                 let settings = JupyterSettings::get_global(cx);
+                    //                 if !settings.enabled {
+                    //                     return;
+                    //                 }
+
+                    //                 runtime_panel.run(editor_view, fs.clone(), cx).ok();
+                    //             })
+                    //             .detach();
+                    //     },
+                    // );
+
+                    // runtime_panel._subscriptions.push(editor_subscription);
+
+                    runtime_panel
                 })
             })?;
 
@@ -104,7 +127,7 @@ impl RuntimePanel {
     }
 
     // Gets the active selection in the editor or the current line
-    fn selection(&self, editor: View<Editor>, cx: &mut ViewContext<Self>) -> Range<Anchor> {
+    fn selection(&self, editor: View<Editor>, cx: &mut WindowContext) -> Range<Anchor> {
         let editor = editor.read(cx);
         let selection = editor.selections.newest::<usize>(cx);
         let multi_buffer_snapshot = editor.buffer().read(cx).snapshot(cx);
@@ -153,7 +176,7 @@ impl RuntimePanel {
     pub fn snippet(
         &self,
         editor: View<Editor>,
-        cx: &mut ViewContext<Self>,
+        cx: &mut WindowContext,
     ) -> Option<(String, Arc<str>, Range<Anchor>)> {
         let buffer = editor.read(cx).buffer().read(cx).snapshot(cx);
         let anchor_range = self.selection(editor, cx);
@@ -192,7 +215,7 @@ impl RuntimePanel {
     pub fn kernelspec(
         &self,
         language_name: &str,
-        cx: &mut ViewContext<Self>,
+        cx: &mut WindowContext,
     ) -> Option<KernelSpecification> {
         let settings = JupyterSettings::get_global(cx);
         let selected_kernel = settings.kernel_selections.get(language_name);
@@ -216,7 +239,7 @@ impl RuntimePanel {
         &mut self,
         editor: View<Editor>,
         fs: Arc<dyn Fs>,
-        cx: &mut ViewContext<Self>,
+        cx: &mut WindowContext,
     ) -> anyhow::Result<()> {
         if !self.enabled {
             return Ok(());
@@ -235,11 +258,11 @@ impl RuntimePanel {
 
         let session = self.sessions.entry(entity_id).or_insert_with(|| {
             let view = cx.new_view(|cx| Session::new(editor, fs.clone(), kernel_specification, cx));
-            cx.notify();
+            cx.notify(view.entity_id());
 
             let subscription = cx.subscribe(
                 &view,
-                |panel: &mut RuntimePanel, _session: View<Session>, event: &SessionEvent, _cx| {
+                |panel: &mut RuntimePanel, event: &SessionEvent, _cx| {
                     match event {
                         SessionEvent::Shutdown(shutdown_event) => {
                             panel.sessions.remove(&shutdown_event.entity_id());
@@ -272,24 +295,24 @@ impl RuntimePanel {
     }
 }
 
-pub fn run(workspace: &mut Workspace, _: &Run, cx: &mut ViewContext<Workspace>) {
-    let settings = JupyterSettings::get_global(cx);
-    if !settings.enabled {
-        return;
-    }
+// pub fn run(workspace: &mut Workspace, _: &Run, cx: &mut ViewContext<Workspace>) {
+//     let settings = JupyterSettings::get_global(cx);
+//     if !settings.enabled {
+//         return;
+//     }
 
-    let editor = workspace
-        .active_item(cx)
-        .and_then(|item| item.act_as::<Editor>(cx));
+//     let editor = workspace
+//         .active_item(cx)
+//         .and_then(|item| item.act_as::<Editor>(cx));
 
-    if let (Some(editor), Some(runtime_panel)) = (editor, workspace.panel::<RuntimePanel>(cx)) {
-        runtime_panel.update(cx, |runtime_panel, cx| {
-            runtime_panel
-                .run(editor, workspace.app_state().fs.clone(), cx)
-                .ok();
-        });
-    }
-}
+//     if let (Some(editor), Some(runtime_panel)) = (editor, workspace.panel::<RuntimePanel>(cx)) {
+//         runtime_panel.update(cx, |runtime_panel, cx| {
+//             runtime_panel
+//                 .run(editor, workspace.app_state().fs.clone(), cx)
+//                 .ok();
+//         });
+//     }
+// }
 
 pub fn clear_outputs(workspace: &mut Workspace, _: &ClearOutputs, cx: &mut ViewContext<Workspace>) {
     let settings = JupyterSettings::get_global(cx);
