@@ -6,10 +6,11 @@ Welcome to Zed, a high-performance, multiplayer code editor from the creators of
 
 ## Installation
 
-You can [download](https://zed.dev/download) Zed today for macOS (v10.15+) and most Linux installations.
+You can [download](https://zed.dev/download) Zed today for macOS (v10.15+).
 
 Support for additional platforms is on our [roadmap](https://zed.dev/roadmap):
 
+- Linux ([tracking issue](https://github.com/zed-industries/zed/issues/7015))
 - Windows ([tracking issue](https://github.com/zed-industries/zed/issues/5394))
 - Web ([tracking issue](https://github.com/zed-industries/zed/issues/5396))
 
@@ -24,8 +25,6 @@ Alternatively, to install the Preview release:
 ```sh
 brew install --cask zed@preview
 ```
-
-For Linux users, [other installation options are available](https://zed.dev/docs/linux#other-ways-to-install-zed-on-linux) depending on your package manager.
 
 ## Developing Zed
 

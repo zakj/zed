@@ -35,7 +35,6 @@ theme.workspace = true
 terminal_view.workspace = true
 ui.workspace = true
 uuid.workspace = true
-util.workspace = true
 workspace.workspace = true
 
 [dev-dependencies]

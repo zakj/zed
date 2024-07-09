@@ -79,6 +79,6 @@ impl RenderOnce for ModelSelector {
                         Tooltip::for_action("Change Model", &ToggleModelSelector, cx)
                     }),
             )
-            .attach(gpui::AnchorCorner::BottomLeft)
+            .anchor(gpui::AnchorCorner::BottomRight)
     }
 }

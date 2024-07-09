@@ -16,6 +16,16 @@ use http::{AsyncBody, HttpClient, HttpClientWithUrl};
 
 use crate::{IndexedDocsDatabase, IndexedDocsProvider, PackageName, ProviderId};
 
+#[derive(Debug, Clone, Copy)]
+pub enum RustdocSource {
+    /// The docs were sourced from Zed's rustdoc index.
+    Index,
+    /// The docs were sourced from local `cargo doc` output.
+    Local,
+    /// The docs were sourced from `docs.rs`.
+    DocsDotRs,
+}
+
 #[derive(Debug)]
 struct RustdocItemWithHistory {
     pub item: RustdocItem,

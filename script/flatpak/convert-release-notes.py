@@ -1,18 +1,18 @@
-import os
 import re
 import requests
 import sys
 import textwrap
-
-from html import escape
+import os
 
 def clean_line(line: str, in_code_fence: bool) -> str:
+    line = re.sub(r"<", "&lt;", line)
+    line = re.sub(r">", "&gt;", line)
     line = re.sub(r"\(\[(#\d+)\]\([\w|\d\:|\/|\.|\-|_]*\)\)", lambda match: f"[{match.group(1)}]", line)
     line = re.sub(r"\[(#\d+)\]\([\w|\d\:|\/|\.|\-|_]*\)", lambda match: f"[{match.group(1)}]", line)
     if not in_code_fence:
         line = line.strip()
 
-    return escape(line)
+    return line
 
 
 def convert_body(body: str) -> str:

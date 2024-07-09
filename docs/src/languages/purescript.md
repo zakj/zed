@@ -1,3 +1,4 @@
 # PureScript
 
-PureScript support is available through the [PureScript extension](https://github.com/zed-industries/zed/tree/main/extensions/purescript).
+- Tree Sitter: [tree-sitter-purescript](https://github.com/postsolar/tree-sitter-purescript)
+- Language Server: [purescript](https://github.com/nwolverson/purescript-language-server)

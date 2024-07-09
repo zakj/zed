@@ -203,10 +203,12 @@ impl LspAdapter for RustLspAdapter {
         language: &Arc<Language>,
     ) -> Option<CodeLabel> {
         let detail = completion
-            .label_details
+            .detail
             .as_ref()
-            .and_then(|detail| detail.detail.as_ref())
-            .or(completion.detail.as_ref())
+            .or(completion
+                .label_details
+                .as_ref()
+                .and_then(|detail| detail.detail.as_ref()))
             .map(ToOwned::to_owned);
         match completion.kind {
             Some(lsp::CompletionItemKind::FIELD) if detail.is_some() => {

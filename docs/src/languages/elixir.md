@@ -1,6 +1,7 @@
 # Elixir
 
-Elixir support is available through the [Elixir extension](https://github.com/zed-industries/zed/tree/main/extensions/elixir).
+- Tree Sitter: [tree-sitter-elixir](https://github.com/elixir-lang/tree-sitter-elixir)
+- Language Server: [elixir-ls](https://github.com/elixir-lsp/elixir-ls)
 
 ## Choosing a language server
 

@@ -1,5 +1,1 @@
-("(" @open ")" @close)
-("[" @open "]" @close)
-("{" @open "}" @close)
-("<" @open ">" @close)
-("\"" @open "\"" @close)
+../typescript/brackets.scm

@@ -3813,18 +3813,18 @@ impl Workspace {
 
                 let docks = serialized_workspace.docks;
 
-                for (dock, serialized_dock) in [
-                    (&mut workspace.right_dock, docks.right),
-                    (&mut workspace.left_dock, docks.left),
-                    (&mut workspace.bottom_dock, docks.bottom),
-                ]
-                .iter_mut()
-                {
-                    dock.update(cx, |dock, cx| {
-                        dock.serialized_dock = Some(serialized_dock.clone());
-                        dock.restore_state(cx);
-                    });
-                }
+                let right = docks.right.clone();
+                workspace
+                    .right_dock
+                    .update(cx, |dock, _| dock.serialized_dock = Some(right));
+                let left = docks.left.clone();
+                workspace
+                    .left_dock
+                    .update(cx, |dock, _| dock.serialized_dock = Some(left));
+                let bottom = docks.bottom.clone();
+                workspace
+                    .bottom_dock
+                    .update(cx, |dock, _| dock.serialized_dock = Some(bottom));
 
                 cx.notify();
             })?;
@@ -6658,7 +6658,7 @@ fn resize_edge(
 
     let corner_size = size(shadow_size * 1.5, shadow_size * 1.5);
     let top_left_bounds = Bounds::new(Point::new(px(0.), px(0.)), corner_size);
-    if !tiling.top && top_left_bounds.contains(&pos) {
+    if top_left_bounds.contains(&pos) {
         return Some(ResizeEdge::TopLeft);
     }
 
@@ -6666,7 +6666,7 @@ fn resize_edge(
         Point::new(window_size.width - corner_size.width, px(0.)),
         corner_size,
     );
-    if !tiling.top && top_right_bounds.contains(&pos) {
+    if top_right_bounds.contains(&pos) {
         return Some(ResizeEdge::TopRight);
     }
 
@@ -6674,7 +6674,7 @@ fn resize_edge(
         Point::new(px(0.), window_size.height - corner_size.height),
         corner_size,
     );
-    if !tiling.bottom && bottom_left_bounds.contains(&pos) {
+    if bottom_left_bounds.contains(&pos) {
         return Some(ResizeEdge::BottomLeft);
     }
 
@@ -6685,7 +6685,7 @@ fn resize_edge(
         ),
         corner_size,
     );
-    if !tiling.bottom && bottom_right_bounds.contains(&pos) {
+    if bottom_right_bounds.contains(&pos) {
         return Some(ResizeEdge::BottomRight);
     }
 

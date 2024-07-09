@@ -25,9 +25,7 @@ pub use wit::{
         npm_package_latest_version,
     },
     zed::extension::platform::{current_platform, Architecture, Os},
-    zed::extension::slash_command::{
-        SlashCommand, SlashCommandArgumentCompletion, SlashCommandOutput, SlashCommandOutputSection,
-    },
+    zed::extension::slash_command::{SlashCommand, SlashCommandOutput, SlashCommandOutputSection},
     CodeLabel, CodeLabelSpan, CodeLabelSpanLiteral, Command, DownloadedFileType, EnvVars,
     KeyValueStore, LanguageServerInstallationStatus, Range, Worktree,
 };
@@ -116,7 +114,7 @@ pub trait Extension: Send + Sync {
         &self,
         _command: SlashCommand,
         _query: String,
-    ) -> Result<Vec<SlashCommandArgumentCompletion>, String> {
+    ) -> Result<Vec<String>, String> {
         Ok(Vec::new())
     }
 
@@ -249,7 +247,7 @@ impl wit::Guest for Component {
     fn complete_slash_command_argument(
         command: SlashCommand,
         query: String,
-    ) -> Result<Vec<SlashCommandArgumentCompletion>, String> {
+    ) -> Result<Vec<String>, String> {
         extension().complete_slash_command_argument(command, query)
     }
 

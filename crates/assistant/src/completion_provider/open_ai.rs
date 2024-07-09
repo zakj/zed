@@ -1,6 +1,5 @@
 use crate::assistant_settings::CloudModel;
 use crate::assistant_settings::{AssistantProvider, AssistantSettings};
-use crate::LanguageModelCompletionProvider;
 use crate::{
     assistant_settings::OpenAiModel, CompletionProvider, LanguageModel, LanguageModelRequest, Role,
 };
@@ -58,75 +57,37 @@ impl OpenAiCompletionProvider {
         self.settings_version = settings_version;
     }
 
-    fn to_open_ai_request(&self, request: LanguageModelRequest) -> Request {
-        let model = match request.model {
-            LanguageModel::OpenAi(model) => model,
-            _ => self.model.clone(),
-        };
-
-        Request {
-            model,
-            messages: request
-                .messages
-                .into_iter()
-                .map(|msg| match msg.role {
-                    Role::User => RequestMessage::User {
-                        content: msg.content,
-                    },
-                    Role::Assistant => RequestMessage::Assistant {
-                        content: Some(msg.content),
-                        tool_calls: Vec::new(),
-                    },
-                    Role::System => RequestMessage::System {
-                        content: msg.content,
-                    },
-                })
-                .collect(),
-            stream: true,
-            stop: request.stop,
-            temperature: request.temperature,
-            tools: Vec::new(),
-            tool_choice: None,
-        }
-    }
-}
-
-impl LanguageModelCompletionProvider for OpenAiCompletionProvider {
-    fn available_models(&self, cx: &AppContext) -> Vec<LanguageModel> {
+    pub fn available_models(&self, cx: &AppContext) -> impl Iterator<Item = OpenAiModel> {
         if let AssistantProvider::OpenAi {
             available_models, ..
         } = &AssistantSettings::get_global(cx).provider
         {
             if !available_models.is_empty() {
-                return available_models
-                    .iter()
-                    .cloned()
-                    .map(LanguageModel::OpenAi)
-                    .collect();
+                // available_models is set, just return it
+                return available_models.clone().into_iter();
             }
         }
         let available_models = if matches!(self.model, OpenAiModel::Custom { .. }) {
+            // available_models is not set but the default model is set to custom, only show custom
             vec![self.model.clone()]
         } else {
+            // default case, use all models except custom
             OpenAiModel::iter()
                 .filter(|model| !matches!(model, OpenAiModel::Custom { .. }))
                 .collect()
         };
-        available_models
-            .into_iter()
-            .map(LanguageModel::OpenAi)
-            .collect()
+        available_models.into_iter()
     }
 
-    fn settings_version(&self) -> usize {
+    pub fn settings_version(&self) -> usize {
         self.settings_version
     }
 
-    fn is_authenticated(&self) -> bool {
+    pub fn is_authenticated(&self) -> bool {
         self.api_key.is_some()
     }
 
-    fn authenticate(&self, cx: &AppContext) -> Task<Result<()>> {
+    pub fn authenticate(&self, cx: &AppContext) -> Task<Result<()>> {
         if self.is_authenticated() {
             Task::ready(Ok(()))
         } else {
@@ -142,36 +103,36 @@ impl LanguageModelCompletionProvider for OpenAiCompletionProvider {
                     String::from_utf8(api_key)?
                 };
                 cx.update_global::<CompletionProvider, _>(|provider, _cx| {
-                    provider.update_current_as::<_, Self>(|provider| {
+                    if let CompletionProvider::OpenAi(provider) = provider {
                         provider.api_key = Some(api_key);
-                    });
+                    }
                 })
             })
         }
     }
 
-    fn reset_credentials(&self, cx: &AppContext) -> Task<Result<()>> {
+    pub fn reset_credentials(&self, cx: &AppContext) -> Task<Result<()>> {
         let delete_credentials = cx.delete_credentials(&self.api_url);
         cx.spawn(|mut cx| async move {
             delete_credentials.await.log_err();
             cx.update_global::<CompletionProvider, _>(|provider, _cx| {
-                provider.update_current_as::<_, Self>(|provider| {
+                if let CompletionProvider::OpenAi(provider) = provider {
                     provider.api_key = None;
-                });
+                }
             })
         })
     }
 
-    fn authentication_prompt(&self, cx: &mut WindowContext) -> AnyView {
+    pub fn authentication_prompt(&self, cx: &mut WindowContext) -> AnyView {
         cx.new_view(|cx| AuthenticationPrompt::new(self.api_url.clone(), cx))
             .into()
     }
 
-    fn model(&self) -> LanguageModel {
-        LanguageModel::OpenAi(self.model.clone())
+    pub fn model(&self) -> OpenAiModel {
+        self.model.clone()
     }
 
-    fn count_tokens(
+    pub fn count_tokens(
         &self,
         request: LanguageModelRequest,
         cx: &AppContext,
@@ -179,7 +140,7 @@ impl LanguageModelCompletionProvider for OpenAiCompletionProvider {
         count_open_ai_tokens(request, cx.background_executor())
     }
 
-    fn complete(
+    pub fn complete(
         &self,
         request: LanguageModelRequest,
     ) -> BoxFuture<'static, Result<BoxStream<'static, Result<String>>>> {
@@ -212,8 +173,36 @@ impl LanguageModelCompletionProvider for OpenAiCompletionProvider {
         .boxed()
     }
 
-    fn as_any_mut(&mut self) -> &mut dyn std::any::Any {
-        self
+    fn to_open_ai_request(&self, request: LanguageModelRequest) -> Request {
+        let model = match request.model {
+            LanguageModel::OpenAi(model) => model,
+            _ => self.model(),
+        };
+
+        Request {
+            model,
+            messages: request
+                .messages
+                .into_iter()
+                .map(|msg| match msg.role {
+                    Role::User => RequestMessage::User {
+                        content: msg.content,
+                    },
+                    Role::Assistant => RequestMessage::Assistant {
+                        content: Some(msg.content),
+                        tool_calls: Vec::new(),
+                    },
+                    Role::System => RequestMessage::System {
+                        content: msg.content,
+                    },
+                })
+                .collect(),
+            stream: true,
+            stop: request.stop,
+            temperature: request.temperature,
+            tools: Vec::new(),
+            tool_choice: None,
+        }
     }
 }
 
@@ -295,9 +284,9 @@ impl AuthenticationPrompt {
         cx.spawn(|_, mut cx| async move {
             write_credentials.await?;
             cx.update_global::<CompletionProvider, _>(|provider, _cx| {
-                provider.update_current_as::<_, OpenAiCompletionProvider>(|provider| {
+                if let CompletionProvider::OpenAi(provider) = provider {
                     provider.api_key = Some(api_key);
-                });
+                }
             })
         })
         .detach_and_log_err(cx);

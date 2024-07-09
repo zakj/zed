@@ -36,6 +36,8 @@ pub fn router() -> Router {
 struct GetExtensionsParams {
     filter: Option<String>,
     #[serde(default)]
+    ids: Option<String>,
+    #[serde(default)]
     max_schema_version: i32,
 }
 
@@ -43,15 +45,26 @@ async fn get_extensions(
     Extension(app): Extension<Arc<AppState>>,
     Query(params): Query<GetExtensionsParams>,
 ) -> Result<Json<GetExtensionsResponse>> {
-    let extensions = app
-        .db
-        .get_extensions(params.filter.as_deref(), params.max_schema_version, 500)
-        .await?;
+    let extension_ids = params
+        .ids
+        .as_ref()
+        .map(|s| s.split(',').map(|s| s.trim()).collect::<Vec<_>>());
 
-    if let Some(query) = params.filter.as_deref() {
-        let count = extensions.len();
-        tracing::info!(query, count, "extension_search")
-    }
+    let extensions = if let Some(extension_ids) = extension_ids {
+        app.db.get_extensions_by_ids(&extension_ids, None).await?
+    } else {
+        let result = app
+            .db
+            .get_extensions(params.filter.as_deref(), params.max_schema_version, 500)
+            .await?;
+
+        if let Some(query) = params.filter.as_deref() {
+            let count = result.len();
+            tracing::info!(query, count, "extension_search")
+        }
+
+        result
+    };
 
     Ok(Json(GetExtensionsResponse { data: extensions }))
 }
