@@ -34,14 +34,6 @@ impl IndexedDocsRegistry {
         }
     }
 
-    pub fn list_providers(&self) -> Vec<ProviderId> {
-        self.stores_by_provider
-            .read()
-            .keys()
-            .cloned()
-            .collect::<Vec<_>>()
-    }
-
     pub fn register_provider(
         &self,
         provider: Box<dyn IndexedDocsProvider + Send + Sync + 'static>,

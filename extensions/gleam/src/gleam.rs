@@ -1,14 +1,13 @@
-mod hexdocs;
-
+use html_to_markdown::{convert_html_to_markdown, TagHandler};
+use std::cell::RefCell;
 use std::fs;
+use std::rc::Rc;
 use zed::lsp::CompletionKind;
 use zed::{
     CodeLabel, CodeLabelSpan, HttpRequest, KeyValueStore, LanguageServerId, SlashCommand,
-    SlashCommandArgumentCompletion, SlashCommandOutput, SlashCommandOutputSection,
+    SlashCommandOutput, SlashCommandOutputSection,
 };
 use zed_extension_api::{self as zed, Result};
-
-use crate::hexdocs::convert_hexdocs_to_markdown;
 
 struct GleamExtension {
     cached_binary_path: Option<String>,
@@ -154,24 +153,12 @@ impl zed::Extension for GleamExtension {
         &self,
         command: SlashCommand,
         _query: String,
-    ) -> Result<Vec<SlashCommandArgumentCompletion>, String> {
+    ) -> Result<Vec<String>, String> {
         match command.name.as_str() {
             "gleam-project" => Ok(vec![
-                SlashCommandArgumentCompletion {
-                    label: "apple".to_string(),
-                    new_text: "Apple".to_string(),
-                    run_command: false,
-                },
-                SlashCommandArgumentCompletion {
-                    label: "banana".to_string(),
-                    new_text: "Banana".to_string(),
-                    run_command: false,
-                },
-                SlashCommandArgumentCompletion {
-                    label: "cherry".to_string(),
-                    new_text: "Cherry".to_string(),
-                    run_command: true,
-                },
+                "apple".to_string(),
+                "banana".to_string(),
+                "cherry".to_string(),
             ]),
             _ => Ok(Vec::new()),
         }
@@ -204,7 +191,19 @@ impl zed::Extension for GleamExtension {
                     ),
                 })?;
 
-                let (markdown, _modules) = convert_hexdocs_to_markdown(response.body.as_bytes())?;
+                let mut handlers: Vec<TagHandler> = vec![
+                    Rc::new(RefCell::new(
+                        html_to_markdown::markdown::WebpageChromeRemover,
+                    )),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::ParagraphHandler)),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::HeadingHandler)),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::ListHandler)),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::TableHandler::new())),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::StyledTextHandler)),
+                ];
+
+                let markdown = convert_html_to_markdown(response.body.as_bytes(), &mut handlers)
+                    .map_err(|err| format!("failed to convert docs to Markdown {err}"))?;
 
                 let mut text = String::new();
                 text.push_str(&markdown);
@@ -245,7 +244,27 @@ impl zed::Extension for GleamExtension {
         database: &KeyValueStore,
     ) -> Result<(), String> {
         match provider.as_str() {
-            "gleam-hexdocs" => hexdocs::index(package, database),
+            "gleam-hexdocs" => {
+                let response = zed::fetch(&HttpRequest {
+                    url: format!("https://hexdocs.pm/{package}"),
+                })?;
+
+                let mut handlers: Vec<TagHandler> = vec![
+                    Rc::new(RefCell::new(
+                        html_to_markdown::markdown::WebpageChromeRemover,
+                    )),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::ParagraphHandler)),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::HeadingHandler)),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::ListHandler)),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::TableHandler::new())),
+                    Rc::new(RefCell::new(html_to_markdown::markdown::StyledTextHandler)),
+                ];
+
+                let markdown = convert_html_to_markdown(response.body.as_bytes(), &mut handlers)
+                    .map_err(|err| format!("failed to convert docs to Markdown {err}"))?;
+
+                Ok(database.insert(&package, &markdown)?)
+            }
             _ => Ok(()),
         }
     }

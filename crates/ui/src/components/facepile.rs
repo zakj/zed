@@ -1,5 +1,5 @@
 use crate::prelude::*;
-use gpui::{AnyElement, StyleRefinement};
+use gpui::AnyElement;
 use smallvec::SmallVec;
 
 /// A facepile is a collection of faces stacked horizontally–
@@ -23,23 +23,6 @@ impl Facepile {
     }
 }
 
-impl ParentElement for Facepile {
-    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
-        self.faces.extend(elements);
-    }
-}
-
-// Style methods.
-impl Facepile {
-    fn style(&mut self) -> &mut StyleRefinement {
-        self.base.style()
-    }
-
-    gpui::padding_style_methods!({
-        visibility: pub
-    });
-}
-
 impl RenderOnce for Facepile {
     fn render(self, _cx: &mut WindowContext) -> impl IntoElement {
         // Lay the faces out in reverse so they overlap in the desired order (left to right, front to back)
@@ -55,5 +38,17 @@ impl RenderOnce for Facepile {
                     .rev()
                     .map(|(ix, player)| div().when(ix > 0, |div| div.ml_neg_1()).child(player)),
             )
+    }
+}
+
+impl ParentElement for Facepile {
+    fn extend(&mut self, elements: impl IntoIterator<Item = AnyElement>) {
+        self.faces.extend(elements);
+    }
+}
+
+impl Styled for Facepile {
+    fn style(&mut self) -> &mut gpui::StyleRefinement {
+        self.base.style()
     }
 }

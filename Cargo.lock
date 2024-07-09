@@ -373,7 +373,6 @@ dependencies = [
  "anyhow",
  "assistant_slash_command",
  "async-watch",
- "breadcrumbs",
  "cargo_toml",
  "chrono",
  "client",
@@ -383,6 +382,7 @@ dependencies = [
  "editor",
  "env_logger",
  "feature_flags",
+ "file_icons",
  "fs",
  "futures 0.3.28",
  "fuzzy",
@@ -7355,7 +7355,6 @@ dependencies = [
  "db",
  "editor",
  "file_icons",
- "fuzzy",
  "gpui",
  "itertools 0.11.0",
  "language",
@@ -8041,7 +8040,6 @@ dependencies = [
  "similar",
  "smol",
  "snippet",
- "snippet_provider",
  "task",
  "tempfile",
  "terminal",
@@ -8495,7 +8493,7 @@ dependencies = [
  "task",
  "terminal_view",
  "ui",
- "ui_input",
+ "ui_text_field",
  "util",
  "workspace",
 ]
@@ -9859,21 +9857,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "snippet_provider"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "collections",
- "fs",
- "futures 0.3.28",
- "gpui",
- "serde",
- "serde_json",
- "snippet",
- "util",
-]
-
-[[package]]
 name = "socket2"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10253,7 +10236,6 @@ dependencies = [
  "story",
  "strum",
  "theme",
- "title_bar",
  "ui",
 ]
 
@@ -11709,7 +11691,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "ui_input"
+name = "ui_text_field"
 version = "0.1.0"
 dependencies = [
  "editor",
@@ -13579,7 +13561,7 @@ dependencies = [
 
 [[package]]
 name = "zed"
-version = "0.144.0"
+version = "0.143.4"
 dependencies = [
  "activity_indicator",
  "anyhow",
@@ -13692,9 +13674,9 @@ dependencies = [
 
 [[package]]
 name = "zed_clojure"
-version = "0.0.3"
+version = "0.0.2"
 dependencies = [
- "zed_extension_api 0.0.6",
+ "zed_extension_api 0.0.4",
 ]
 
 [[package]]
@@ -13806,14 +13788,14 @@ dependencies = [
 
 [[package]]
 name = "zed_lua"
-version = "0.0.3"
+version = "0.0.2"
 dependencies = [
  "zed_extension_api 0.0.6",
 ]
 
 [[package]]
 name = "zed_ocaml"
-version = "0.0.2"
+version = "0.0.1"
 dependencies = [
  "zed_extension_api 0.0.6",
 ]

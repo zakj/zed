@@ -4,7 +4,7 @@ use super::{
     SlashCommand, SlashCommandOutput,
 };
 use anyhow::Result;
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
+use assistant_slash_command::SlashCommandOutputSection;
 use gpui::{AppContext, Task, WeakView};
 use language::{CodeLabel, LineEnding, LspAdapterDelegate};
 use semantic_index::SemanticIndex;
@@ -46,7 +46,7 @@ impl SlashCommand for SearchSlashCommand {
         _cancel: Arc<AtomicBool>,
         _workspace: Option<WeakView<Workspace>>,
         _cx: &mut AppContext,
-    ) -> Task<Result<Vec<ArgumentCompletion>>> {
+    ) -> Task<Result<Vec<String>>> {
         Task::ready(Ok(Vec::new()))
     }
 

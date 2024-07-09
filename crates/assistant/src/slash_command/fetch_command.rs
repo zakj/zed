@@ -4,9 +4,7 @@ use std::sync::atomic::AtomicBool;
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context, Result};
-use assistant_slash_command::{
-    ArgumentCompletion, SlashCommand, SlashCommandOutput, SlashCommandOutputSection,
-};
+use assistant_slash_command::{SlashCommand, SlashCommandOutput, SlashCommandOutputSection};
 use futures::AsyncReadExt;
 use gpui::{AppContext, Task, WeakView};
 use html_to_markdown::{convert_html_to_markdown, markdown, TagHandler};
@@ -121,7 +119,7 @@ impl SlashCommand for FetchSlashCommand {
         _cancel: Arc<AtomicBool>,
         _workspace: Option<WeakView<Workspace>>,
         _cx: &mut AppContext,
-    ) -> Task<Result<Vec<ArgumentCompletion>>> {
+    ) -> Task<Result<Vec<String>>> {
         Task::ready(Ok(Vec::new()))
     }
 

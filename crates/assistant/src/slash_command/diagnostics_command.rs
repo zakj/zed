@@ -1,6 +1,6 @@
 use super::{create_label_for_command, SlashCommand, SlashCommandOutput};
 use anyhow::{anyhow, Result};
-use assistant_slash_command::{ArgumentCompletion, SlashCommandOutputSection};
+use assistant_slash_command::SlashCommandOutputSection;
 use fuzzy::{PathMatch, StringMatchCandidate};
 use gpui::{AppContext, Model, Task, View, WeakView};
 use language::{
@@ -20,9 +20,9 @@ use util::paths::PathMatcher;
 use util::ResultExt;
 use workspace::Workspace;
 
-pub(crate) struct DiagnosticsSlashCommand;
+pub(crate) struct DiagnosticsCommand;
 
-impl DiagnosticsSlashCommand {
+impl DiagnosticsCommand {
     fn search_paths(
         &self,
         query: String,
@@ -81,7 +81,7 @@ impl DiagnosticsSlashCommand {
     }
 }
 
-impl SlashCommand for DiagnosticsSlashCommand {
+impl SlashCommand for DiagnosticsCommand {
     fn name(&self) -> String {
         "diagnostics".into()
     }
@@ -108,7 +108,7 @@ impl SlashCommand for DiagnosticsSlashCommand {
         cancellation_flag: Arc<AtomicBool>,
         workspace: Option<WeakView<Workspace>>,
         cx: &mut AppContext,
-    ) -> Task<Result<Vec<ArgumentCompletion>>> {
+    ) -> Task<Result<Vec<String>>> {
         let Some(workspace) = workspace.and_then(|workspace| workspace.upgrade()) else {
             return Task::ready(Err(anyhow!("workspace was dropped")));
         };
@@ -143,14 +143,7 @@ impl SlashCommand for DiagnosticsSlashCommand {
                 .map(|candidate| candidate.string),
             );
 
-            Ok(matches
-                .into_iter()
-                .map(|completion| ArgumentCompletion {
-                    label: completion.clone(),
-                    new_text: completion,
-                    run_command: true,
-                })
-                .collect())
+            Ok(matches)
         })
     }
 

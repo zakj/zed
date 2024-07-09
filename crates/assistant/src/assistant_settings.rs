@@ -1,6 +1,5 @@
 use std::fmt;
 
-use crate::{preprocess_anthropic_request, LanguageModel, LanguageModelRequest};
 pub use anthropic::Model as AnthropicModel;
 use gpui::Pixels;
 pub use ollama::Model as OllamaModel;
@@ -15,6 +14,8 @@ use serde::{
 };
 use settings::{Settings, SettingsSources};
 use strum::{EnumIter, IntoEnumIterator};
+
+use crate::{preprocess_anthropic_request, LanguageModel, LanguageModelRequest};
 
 #[derive(Clone, Debug, Default, PartialEq, EnumIter)]
 pub enum CloudModel {

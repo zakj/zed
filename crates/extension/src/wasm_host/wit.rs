@@ -20,7 +20,7 @@ use wasmtime::{
 pub use latest::CodeLabelSpanLiteral;
 pub use latest::{
     zed::extension::lsp::{Completion, CompletionKind, InsertTextFormat, Symbol, SymbolKind},
-    zed::extension::slash_command::{SlashCommandArgumentCompletion, SlashCommandOutput},
+    zed::extension::slash_command::SlashCommandOutput,
     CodeLabel, CodeLabelSpan, Command, Range, SlashCommand,
 };
 pub use since_v0_0_4::LanguageServerConfig;
@@ -263,7 +263,7 @@ impl Extension {
         store: &mut Store<WasmState>,
         command: &SlashCommand,
         query: &str,
-    ) -> Result<Result<Vec<SlashCommandArgumentCompletion>, String>> {
+    ) -> Result<Result<Vec<String>, String>> {
         match self {
             Extension::V007(ext) => {
                 ext.call_complete_slash_command_argument(store, command, query)

@@ -383,8 +383,9 @@ impl PlatformWindow for WindowsWindow {
         self.0.state.borrow().scale_factor
     }
 
+    // todo(windows)
     fn appearance(&self) -> WindowAppearance {
-        system_appearance().log_err().unwrap_or_default()
+        WindowAppearance::Dark
     }
 
     fn display(&self) -> Option<Rc<dyn PlatformDisplay>> {
@@ -404,8 +405,9 @@ impl PlatformWindow for WindowsWindow {
         logical_point(point.x as f32, point.y as f32, scale_factor)
     }
 
+    // todo(windows)
     fn modifiers(&self) -> Modifiers {
-        current_modifiers()
+        Modifiers::none()
     }
 
     fn set_input_handler(&mut self, input_handler: PlatformInputHandler) {
