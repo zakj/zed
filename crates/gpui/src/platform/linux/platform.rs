@@ -3,6 +3,7 @@
 use std::any::{type_name, Any};
 use std::cell::{self, RefCell};
 use std::env;
+use std::ffi::OsString;
 use std::fs::File;
 use std::io::Read;
 use std::ops::{Deref, DerefMut};
@@ -25,6 +26,7 @@ use calloop::{EventLoop, LoopHandle, LoopSignal};
 use filedescriptor::FileDescriptor;
 use flume::{Receiver, Sender};
 use futures::channel::oneshot;
+use mio::Waker;
 use parking_lot::Mutex;
 use time::UtcOffset;
 use util::ResultExt;
@@ -83,6 +85,16 @@ pub(crate) struct PlatformHandlers {
     pub(crate) validate_app_menu_command: Option<Box<dyn FnMut(&dyn Action) -> bool>>,
 }
 
+pub trait QuitSignal {
+    fn quit(&mut self);
+}
+
+impl QuitSignal for LoopSignal {
+    fn quit(&mut self) {
+        self.stop();
+    }
+}
+
 pub(crate) struct LinuxCommon {
     pub(crate) background_executor: BackgroundExecutor,
     pub(crate) foreground_executor: ForegroundExecutor,
@@ -90,17 +102,20 @@ pub(crate) struct LinuxCommon {
     pub(crate) appearance: WindowAppearance,
     pub(crate) auto_hide_scrollbars: bool,
     pub(crate) callbacks: PlatformHandlers,
-    pub(crate) signal: LoopSignal,
+    pub(crate) quit_signal: Box<dyn QuitSignal>,
     pub(crate) menus: Vec<OwnedMenu>,
 }
 
 impl LinuxCommon {
-    pub fn new(signal: LoopSignal) -> (Self, Channel<Runnable>) {
+    pub fn new(
+        quit_signal: Box<dyn QuitSignal>,
+        main_waker: Option<Arc<Waker>>,
+    ) -> (Self, Channel<Runnable>) {
         let (main_sender, main_receiver) = calloop::channel::channel::<Runnable>();
         let text_system = Arc::new(CosmicTextSystem::new());
         let callbacks = PlatformHandlers::default();
 
-        let dispatcher = Arc::new(LinuxDispatcher::new(main_sender.clone()));
+        let dispatcher = Arc::new(LinuxDispatcher::new(main_sender.clone(), main_waker));
 
         let background_executor = BackgroundExecutor::new(dispatcher.clone());
 
@@ -111,7 +126,7 @@ impl LinuxCommon {
             appearance: WindowAppearance::Light,
             auto_hide_scrollbars: false,
             callbacks,
-            signal,
+            quit_signal,
             menus: Vec::new(),
         };
 
@@ -145,7 +160,7 @@ impl<P: LinuxClient + 'static> Platform for P {
     }
 
     fn quit(&self) {
-        self.with_common(|common| common.signal.stop());
+        self.with_common(|common| common.quit_signal.quit());
     }
 
     fn compositor_name(&self) -> &'static str {
@@ -299,20 +314,27 @@ impl<P: LinuxClient + 'static> Platform for P {
         let directory = directory.to_owned();
         self.foreground_executor()
             .spawn(async move {
-                let result = SaveFileRequest::default()
+                let request = SaveFileRequest::default()
                     .modal(true)
                     .title("Select new path")
                     .accept_label("Accept")
-                    .send()
-                    .await
-                    .ok()
-                    .and_then(|request| request.response().ok())
-                    .and_then(|response| {
-                        response
-                            .uris()
-                            .first()
-                            .and_then(|uri| uri.to_file_path().ok())
-                    });
+                    .current_folder(directory);
+
+                let result = if let Ok(request) = request {
+                    request
+                        .send()
+                        .await
+                        .ok()
+                        .and_then(|request| request.response().ok())
+                        .and_then(|response| {
+                            response
+                                .uris()
+                                .first()
+                                .and_then(|uri| uri.to_file_path().ok())
+                        })
+                } else {
+                    None
+                };
 
                 done_tx.send(result);
             })
@@ -508,6 +530,27 @@ pub(super) fn is_within_click_distance(a: Point<Pixels>, b: Point<Pixels>) -> bo
     diff.x.abs() <= DOUBLE_CLICK_DISTANCE && diff.y.abs() <= DOUBLE_CLICK_DISTANCE
 }
 
+pub(super) fn get_xkb_compose_state(cx: &xkb::Context) -> Option<xkb::compose::State> {
+    let mut locales = Vec::default();
+    if let Some(locale) = std::env::var_os("LC_CTYPE") {
+        locales.push(locale);
+    }
+    locales.push(OsString::from("C"));
+    let mut state: Option<xkb::compose::State> = None;
+    for locale in locales {
+        if let Ok(table) =
+            xkb::compose::Table::new_from_locale(&cx, &locale, xkb::compose::COMPILE_NO_FLAGS)
+        {
+            state = Some(xkb::compose::State::new(
+                &table,
+                xkb::compose::STATE_NO_FLAGS,
+            ));
+            break;
+        }
+    }
+    state
+}
+
 pub(super) unsafe fn read_fd(mut fd: FileDescriptor) -> Result<String> {
     let mut file = File::from_raw_fd(fd.as_raw_fd());
 
@@ -536,6 +579,8 @@ impl CursorStyle {
             CursorStyle::ResizeUp => Shape::NResize,
             CursorStyle::ResizeDown => Shape::SResize,
             CursorStyle::ResizeUpDown => Shape::NsResize,
+            CursorStyle::ResizeUpLeftDownRight => Shape::NwseResize,
+            CursorStyle::ResizeUpRightDownLeft => Shape::NeswResize,
             CursorStyle::ResizeColumn => Shape::ColResize,
             CursorStyle::ResizeRow => Shape::RowResize,
             CursorStyle::IBeamCursorForVerticalLayout => Shape::VerticalText,
@@ -563,6 +608,8 @@ impl CursorStyle {
             CursorStyle::ResizeUp => "n-resize",
             CursorStyle::ResizeDown => "s-resize",
             CursorStyle::ResizeUpDown => "ns-resize",
+            CursorStyle::ResizeUpLeftDownRight => "nwse-resize",
+            CursorStyle::ResizeUpRightDownLeft => "nesw-resize",
             CursorStyle::ResizeColumn => "col-resize",
             CursorStyle::ResizeRow => "row-resize",
             CursorStyle::IBeamCursorForVerticalLayout => "vertical-text",
@@ -583,19 +630,11 @@ impl Keystroke {
         let key_utf8 = state.key_get_utf8(keycode);
         let key_sym = state.key_get_one_sym(keycode);
 
-        // The logic here tries to replicate the logic in `../mac/events.rs`
-        // "Consumed" modifiers are modifiers that have been used to translate a key, for example
-        // pressing "shift" and "1" on US layout produces the key `!` but "consumes" the shift.
-        // Notes:
-        //  - macOS gets the key character directly ("."), xkb gives us the key name ("period")
-        //  - macOS logic removes consumed shift modifier for symbols: "{", not "shift-{"
-        //  - macOS logic keeps consumed shift modifiers for letters: "shift-a", not "a" or "A"
-
-        let mut handle_consumed_modifiers = true;
         let key = match key_sym {
             Keysym::Return => "enter".to_owned(),
             Keysym::Prior => "pageup".to_owned(),
             Keysym::Next => "pagedown".to_owned(),
+            Keysym::ISO_Left_Tab => "tab".to_owned(),
 
             Keysym::comma => ",".to_owned(),
             Keysym::period => ".".to_owned(),
@@ -633,29 +672,21 @@ impl Keystroke {
             Keysym::equal => "=".to_owned(),
             Keysym::plus => "+".to_owned(),
 
-            Keysym::ISO_Left_Tab => {
-                handle_consumed_modifiers = false;
-                "tab".to_owned()
-            }
-
-            _ => {
-                handle_consumed_modifiers = false;
-                xkb::keysym_get_name(key_sym).to_lowercase()
-            }
+            _ => xkb::keysym_get_name(key_sym).to_lowercase(),
         };
+
+        if modifiers.shift {
+            // we only include the shift for upper-case letters by convention,
+            // so don't include for numbers and symbols, but do include for
+            // tab/enter, etc.
+            if key.chars().count() == 1 && key_utf8 == key {
+                modifiers.shift = false;
+            }
+        }
 
         // Ignore control characters (and DEL) for the purposes of ime_key
         let ime_key =
             (key_utf32 >= 32 && key_utf32 != 127 && !key_utf8.is_empty()).then_some(key_utf8);
-
-        if handle_consumed_modifiers {
-            let mod_shift_index = state.get_keymap().mod_get_index(xkb::MOD_NAME_SHIFT);
-            let is_shift_consumed = state.mod_index_is_consumed(keycode, mod_shift_index);
-
-            if modifiers.shift && is_shift_consumed {
-                modifiers.shift = false;
-            }
-        }
 
         Keystroke {
             modifiers,

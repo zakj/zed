@@ -203,6 +203,10 @@ impl Telemetry {
             max_queue_size: MAX_QUEUE_LEN,
             worktree_id_map: WorktreeIdMap(HashMap::from_iter([
                 (
+                    "pnpm-lock.yaml".to_string(),
+                    ProjectCache::new("pnpm".to_string()),
+                ),
+                (
                     "yarn.lock".to_string(),
                     ProjectCache::new("yarn".to_string()),
                 ),
@@ -611,6 +615,7 @@ impl Telemetry {
 
                         let request_body = EventRequestBody {
                             installation_id: state.installation_id.as_deref().map(Into::into),
+                            metrics_id: state.metrics_id.as_deref().map(Into::into),
                             session_id: state.session_id.clone(),
                             is_staff: state.is_staff,
                             app_version: state.app_version.clone(),

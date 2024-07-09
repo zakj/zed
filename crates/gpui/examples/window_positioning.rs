@@ -51,6 +51,8 @@ fn main() {
                     kind: WindowKind::PopUp,
                     is_movable: false,
                     app_id: None,
+                    window_min_size: None,
+                    window_decorations: None,
                 }
             };
 

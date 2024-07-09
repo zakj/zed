@@ -23,7 +23,7 @@ impl RenderOnce for ModelSelector {
             .with_handle(self.handle)
             .menu(move |cx| {
                 ContextMenu::build(cx, |mut menu, cx| {
-                    for model in CompletionProvider::global(cx).available_models() {
+                    for model in CompletionProvider::global(cx).available_models(cx) {
                         menu = menu.custom_entry(
                             {
                                 let model = model.clone();
@@ -79,6 +79,6 @@ impl RenderOnce for ModelSelector {
                         Tooltip::for_action("Change Model", &ToggleModelSelector, cx)
                     }),
             )
-            .anchor(gpui::AnchorCorner::BottomRight)
+            .attach(gpui::AnchorCorner::BottomLeft)
     }
 }
