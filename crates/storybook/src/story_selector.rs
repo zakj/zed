@@ -7,7 +7,7 @@ use clap::builder::PossibleValue;
 use clap::ValueEnum;
 use gpui::{AnyView, VisualContext};
 use strum::{EnumIter, EnumString, IntoEnumIterator};
-use ui::prelude::*;
+use ui::{prelude::*, NotificationToastStory};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy, strum::Display, EnumString, EnumIter)]
 #[strum(serialize_all = "snake_case")]
@@ -29,6 +29,7 @@ pub enum ComponentStory {
     List,
     ListHeader,
     ListItem,
+    NotificationToast,
     OverflowScroll,
     Picker,
     Scroll,
@@ -64,17 +65,18 @@ impl ComponentStory {
             Self::List => cx.new_view(|_| ui::ListStory).into(),
             Self::ListHeader => cx.new_view(|_| ui::ListHeaderStory).into(),
             Self::ListItem => cx.new_view(|_| ui::ListItemStory).into(),
+            Self::NotificationToast => cx.new_view(|_| NotificationToastStory).into(),
             Self::OverflowScroll => cx.new_view(|_| crate::stories::OverflowScrollStory).into(),
+            Self::Picker => PickerStory::new(cx).into(),
             Self::Scroll => ScrollStory::view(cx).into(),
             Self::Setting => cx.new_view(|cx| ui::SettingStory::init(cx)).into(),
-            Self::Text => TextStory::view(cx).into(),
             Self::Tab => cx.new_view(|_| ui::TabStory).into(),
             Self::TabBar => cx.new_view(|_| ui::TabBarStory).into(),
+            Self::Text => TextStory::view(cx).into(),
             Self::ToggleButton => cx.new_view(|_| ui::ToggleButtonStory).into(),
             Self::ToolStrip => cx.new_view(|_| ui::ToolStripStory).into(),
             Self::ViewportUnits => cx.new_view(|_| crate::stories::ViewportUnitsStory).into(),
             Self::WithRemSize => cx.new_view(|_| crate::stories::WithRemSizeStory).into(),
-            Self::Picker => PickerStory::new(cx).into(),
         }
     }
 }
