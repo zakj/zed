@@ -116,6 +116,8 @@ pub enum IconName {
     CaseSensitive,
     Check,
     ChevronDown,
+    /// This chevron indicates a popover menu.
+    ChevronDownSmall,
     ChevronLeft,
     ChevronRight,
     ChevronUp,
@@ -264,6 +266,7 @@ impl IconName {
             IconName::CaseSensitive => "icons/case_insensitive.svg",
             IconName::Check => "icons/check.svg",
             IconName::ChevronDown => "icons/chevron_down.svg",
+            IconName::ChevronDownSmall => "icons/chevron_down_small.svg",
             IconName::ChevronLeft => "icons/chevron_left.svg",
             IconName::ChevronRight => "icons/chevron_right.svg",
             IconName::ChevronUp => "icons/chevron_up.svg",
