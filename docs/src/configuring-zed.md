@@ -1133,10 +1133,10 @@ These values take in the same options as the root-level settings with the same n
 
 **Options**
 
-1. `none` to stop the soft-wrapping
-2. `prefer_line` to avoid wrapping generally, unless the line is too long
-3. `editor_width` to wrap lines that overflow the editor width
-4. `preferred_line_length` to wrap lines that overflow `preferred_line_length` config value
+1. `none` disable soft-wrapping of lines
+2. `prefer_line` soft wrap very long lines (512+ chars)
+3. `editor_width` soft wrap lines wider than the editor width
+4. `preferred_line_length` soft wrap lines longer than `preferred_line_length` config value
 
 ## Wrap Guides (Vertical Rulers)
 

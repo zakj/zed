@@ -474,17 +474,11 @@
   //    or falling back to formatting via language server:
   //     "formatter": "auto"
   "formatter": "auto",
-  // How to soft-wrap long lines of text.
-  // Possible values:
-  //
-  // 1. Do not soft wrap.
-  //      "soft_wrap": "none",
-  // 2. Prefer a single line generally, unless an overly long line is encountered.
-  //      "soft_wrap": "prefer_line",
-  // 3. Soft wrap lines that overflow the editor.
-  //      "soft_wrap": "editor_width",
-  // 4. Soft wrap lines at the preferred line length.
-  //      "soft_wrap": "preferred_line_length",
+  // How to soft-wrap long lines of text. Possible options:
+  // "soft_wrap": "none",          // Disable soft-wrap.
+  // "soft_wrap": "prefer_line",   // Only soft-wrap very long lines (512+ chars).
+  // "soft_wrap": "editor_width",  // Soft wrap lines wider than the editor window.
+  // "soft_wrap": "preferred_line_length", // Soft wrap at `preferred_line_length`.
   "soft_wrap": "prefer_line",
   // The column at which to soft-wrap lines, for buffers where soft-wrap
   // is enabled.
@@ -769,9 +763,13 @@
     },
     "Markdown": {
       "format_on_save": "off",
+      "soft_wrap": "editor_width",
       "prettier": {
         "allowed": true
       }
+    },
+    "Plain Text": {
+      "soft_wrap": "editor_width"
     },
     "PHP": {
       "prettier": {
